@@ -1,13 +1,15 @@
 'use strict';
 
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
 Object.defineProperty(exports, '__esModule', {
   value: true
 });
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
 exports.createClient = createClient;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
 var XMLHttpRequest = require('./xhr').XMLHttpRequest;
 
 /**
@@ -96,17 +98,17 @@ var BugzillaClient = (function () {
 
     /**
     Authentication details for given user.
-     Example:
-         { id: 1222, token: 'xxxx' }
-     @type {Object}
+      Example:
+          { id: 1222, token: 'xxxx' }
+      @type {Object}
     */
 
     /**
-    In the REST API we first login to acquire a token which is then used to make 
+    In the REST API we first login to acquire a token which is then used to make
     requests. See: http://bzr.mozilla.org/bmo/4.2/view/head:/Bugzilla/WebService/Server/REST.pm#L556
-     This method can be used publicly but is designed for internal consumption for
+      This method can be used publicly but is designed for internal consumption for
     ease of use.
-     @param {Function} callback [Error err, String token].
+      @param {Function} callback [Error err, String token].
     */
     value: function login(callback) {
 
@@ -124,9 +126,8 @@ var BugzillaClient = (function () {
       };
 
       var handleLogin = (function handleLogin(err, response) {
-        if (err) {
-          return callback(err);
-        }if (response.result) {
+        if (err) return callback(err);
+        if (response.result) {
           this._auth = response.result;
         } else {
           this._auth = response;
@@ -173,17 +174,24 @@ var BugzillaClient = (function () {
   }, {
     key: 'bugComments',
     value: function bugComments(id, callback) {
+      return this.bugCommentsSince(id, null, callback);
+    }
+  }, {
+    key: 'bugCommentsSince',
+    value: function bugCommentsSince(id, date, callback) {
       var _callback = function _callback(e, r) {
         if (e) throw e;
         var _bug_comments = r[id];
-        if (typeof _bug_comments.comments !== 'undefined') {
+        if (typeof _bug_comments['comments'] !== 'undefined') {
           // bugzilla 5 :(
           _bug_comments = _bug_comments.comments;
         }
         callback(null, _bug_comments);
       };
 
-      this.APIRequest('/bug/' + id + '/comment', 'GET', _callback, 'bugs');
+      var params = date ? { new_since: date } : null;
+
+      this.APIRequest('/bug/' + id + '/comment', 'GET', _callback, 'bugs', null, params);
     }
   }, {
     key: 'addComment',
@@ -193,7 +201,14 @@ var BugzillaClient = (function () {
   }, {
     key: 'bugHistory',
     value: function bugHistory(id, callback) {
-      this.APIRequest('/bug/' + id + '/history', 'GET', callback, 'bugs');
+      return this.bugHistorySince(id, null, callback);
+    }
+  }, {
+    key: 'bugHistorySince',
+    value: function bugHistorySince(id, date, callback) {
+      var params = date ? { new_since: date } : null;
+
+      this.APIRequest('/bug/' + id + '/history', 'GET', callback, 'bugs', null, params);
     }
   }, {
     key: 'bugAttachments',
@@ -205,8 +220,8 @@ var BugzillaClient = (function () {
      * @param {Number} id of bug.
      * @param {Function} [Error, Array<Attachment>].
      */
-    value: function bugAttachments(id, callback) {
-      this.APIRequest('/bug/' + id + '/attachment', 'GET', extractField(id, callback), 'bugs');
+    value: function bugAttachments(id, params, callback) {
+      this.APIRequest('/bug/' + id + '/attachment', 'GET', extractField(id, callback), 'bugs', null, params);
     }
   }, {
     key: 'createAttachment',
@@ -243,8 +258,8 @@ var BugzillaClient = (function () {
   }, {
     key: 'getConfiguration',
 
-    /* 
-      XXX this call is provided for convenience to people scripting against prod bugzillq 
+    /*
+      XXX this call is provided for convenience to people scripting against prod bugzillq
       THERE IS NO EQUIVALENT REST CALL IN TIP, so this should not be tested against tip, hence
       the hard-coded url.
     */
@@ -349,9 +364,9 @@ var BugzillaClient = (function () {
       }
 
       // handle generic errors
-      if (err) {
-        return callback(err);
-      } // anything in 200 status range is a success
+      if (err) return callback(err);
+
+      // anything in 200 status range is a success
       var requestSuccessful = response.status > 199 && response.status < 300;
 
       // even in the case of an unsuccessful request we may have json data.
@@ -367,8 +382,8 @@ var BugzillaClient = (function () {
       }
 
       // detect if we're running Bugzilla 5.0
-      if (typeof parsedBody.result !== 'undefined') {
-        parsedBody = parsedBody.result;
+      if (typeof parsedBody['result'] !== 'undefined') {
+        parsedBody = parsedBody['result'];
       }
 
       // successful http respnse but an error

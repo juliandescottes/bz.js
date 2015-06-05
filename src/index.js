@@ -225,12 +225,14 @@ export var BugzillaClient = class {
    * @param {Number} id of bug.
    * @param {Function} [Error, Array<Attachment>].
    */
-  bugAttachments (id, callback) {
+  bugAttachments (id, params, callback) {
     this.APIRequest(
       '/bug/' + id + '/attachment',
       'GET',
       extractField(id, callback),
-      'bugs'
+      'bugs',
+      null,
+      params
     );
   }
 
